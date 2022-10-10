@@ -1,0 +1,27 @@
+{
+    "name": "geckoboom/whirlwind-scheduler",
+    "description": "Cron scheduler for console commands",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "autoload": {
+        "psr-4": {
+            "Geckoboom\\WhirlwindScheduler\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Geckoboom\\WhirlwindScheduler\\Test\\": "tests"
+        }
+    },
+    "authors": [
+        {
+            "name": "Artem Tsyganov",
+            "email": "ontroip@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "~7.4",
+        "whirlwind-framework/framework": "dev-main"
+    }
+}
