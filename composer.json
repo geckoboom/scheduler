@@ -1,21 +1,19 @@
 {
-    "name": "geckoboom/whirlwind-scheduler",
+    "name": "geckoboom/scheduler",
     "description": "Cron scheduler for console commands",
     "keywords": [
-        "whirlwind",
         "scheduler"
     ],
     "type": "library",
     "license": "BSD-3-Clause",
     "autoload": {
-        "files": ["src/helpers.php"],
         "psr-4": {
-            "Geckoboom\\WhirlwindScheduler\\": "src/"
+            "Geckoboom\\Scheduler\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Geckoboom\\WhirlwindScheduler\\Test\\": "tests"
+            "Geckoboom\\Scheduler\\Test\\": "tests/"
         }
     },
     "authors": [
@@ -27,11 +25,10 @@
     "minimum-stability": "dev",
     "require": {
         "php": "~7.4",
-        "whirlwind-framework/framework": "dev-main",
-        "dragonmantank/cron-expression": "dev-master",
         "psr/simple-cache": "^1.0",
+        "dragonmantank/cron-expression": "dev-master",
         "symfony/process": "5.4.x-dev",
-        "league/container": "4.x-dev"
+        "psr/container": "2.0.x-dev"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "4.0.x-dev",

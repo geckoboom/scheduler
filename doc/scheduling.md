@@ -3,9 +3,9 @@
 You may define all of your scheduled tasks in the `schedule` method of your own realization `ScheduleRegistrarInterface`.
 In the example we will schedule a command to be called every day at midnight:
 ```php
-class MyScheduleRegistrar implements \Geckoboom\WhirlwindScheduler\ScheduleRegistrarInterface
+class MyScheduleRegistrar implements \Geckoboom\Scheduler\ScheduleRegistrarInterface
 {
-    public function schedule(\Geckoboom\WhirlwindScheduler\Schedule $schedule) : void{
+    public function schedule(\Geckoboom\Scheduler\Schedule $schedule) : void{
         $schedule->command('orders:distribute', ['--option' => 'option1', 'argument'])->daily();
     }
 }

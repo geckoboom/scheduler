@@ -5,72 +5,84 @@
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-4. [Scheduling](doc/scheduling.md)
+4. [Usage](#usage)
+5. [Scheduling](doc/scheduling.md)
    1. [Schedule Frequency Options](doc/scheduling.md#schedule-frequency-options)
    1. [Truth Test Constraints](doc/scheduling.md#truth-test-constraints)
-5. [Advanced](doc/advanced.md)
+6[Advanced](doc/advanced.md)
 
 ## Introduction
 
-Whirlwind's command scheduler is a great approach to managing scheduled console commands on the server.
-The package allows you to control your task scheduling withing Whirlwind console application. When using a
+Command scheduler is a great approach to managing scheduled console commands on the server.
+The package allows you to control your task scheduling withing console application. When using a
 scheduler, only a single cron entry is required on your server.
 
 ## Installation
 
 This is installable via Composer as This is installable via [Composer](https://getcomposer.org/) as
-[nelmio/alice](https://packagist.org/packages/geckoboom/whirlwind-scheduler):
+[nelmio/alice](https://packagist.org/packages/geckoboom/scheduler):
 
-    composer require geckoboom/whirlwind-scheduler
+    composer require geckoboom/scheduler
 
 ## Configuration
 
 Several steps required to configure scheduler
 
-1. Setup your project environment with variables `APP_BASE_PATH` and `APP_TIMEZONE`. The `APP_BASE_PATH` variable 
-defines path to your project root folder, while the `APP_TIMEZONE` defines server time zone for your scheduler. 
-By default the `APP_TIMEZONE` variable use `UTC` timezone and it can be omitted during environment configuration.
-2. `ScheduleServiceProvider` register two implementations `EventMutexInterface` and `ScheduleMutexInterface`.
-   - By default, these realizations based on data storing in cache. In such way you have to ensure that you provide 
-   `Psr\SimpleCache\CacheInterface` dependency. 
-   
-   ```php
-    $container->add(
-        Psr\SimpleCache\CacheInterface::class,
-        static function (): Psr\SimpleCache\CacheInterface
-        {
-            // return your dependency
-        }
-    );
-    ```
-   
-   - If you need your own realizations of `EventMutexInterface` and/or `ScheduleMutexInterface` you can override it
-   
-   ```php
-   $container->add(
-       EventMutexInterface::class,
-       static function (): EventMutexInterface
-       {
-           // return your dependency
-       }
-   );
-    
-   $container->add(
-        ScheduleMutexInterface::class,
-        static function (): ScheduleMutexInterface
-        {
-            // return your dependency
-        }
-   )
-   ```
-
-3. Provide your `ScheduleRegistrarInterface` dependency.
-4. Make sure that you provide shared `Whirlwind\App\Console\Application::class` dependency.
-
+1. Provide implementation of `Geckoboom\Scheduler\CallerInterface`.
 ```php
-class MyScheduleRegistrar implements \Geckoboom\WhirlwindScheduler\ScheduleRegistrarInterface
+class ReflectionCaller implements \Geckoboom\Scheduler\CallerInterface
 {
-    public function schedule(\Geckoboom\WhirlwindScheduler\Schedule $schedule) : void{
+    protected ReflectionContainer $container;
+    
+    public function call(\Closure $callback){
+        $args = [];
+        $reflectionMethod = new \ReflectionMethod($callback, '__invoke');
+        $args = [];
+        foreach ($reflectionMethod->getParameters() as $parameter) {
+            if (!$this->container->has($parameter->getName()) && $parameter->isDefaultValueAvailable()) {
+                $args[$parameter->getName()] = $parameter->getDefaultValue();
+            }
+        }
+   
+        return $this->container->call($callback, $args);     
+    }
+}
+```
+2. Provide two implementations of `EventMutexInterface` and `ScheduleMutexInterface`. The package contains default 
+realizations of these interfaces based on `Psr\SimpleCache\CacheInterface` dependency. You can do it in such ways
+```php
+   $container->add(
+        \Psr\SimpleCache\CacheInterface::class,
+        MyCacheImplementation::class
+   );
+
+   $container->add(
+        \Geckoboom\Scheduler\EventMutexInterface::class,
+        \Geckoboom\Scheduler\EventMutex\CacheEventMutex::class
+   );
+
+   $container->add(
+        \Geckoboom\Scheduler\ScheduleMutexInterface::class,
+        \Geckoboom\Scheduler\ScheduleMutex\CacheScheduleMutex::class
+   );
+```
+or create your own realizations
+```php
+    $container->add(
+           \Geckoboom\Scheduler\EventMutexInterface::class,
+           MyEventMutexImplementation::class
+    );
+
+    $container->add(
+        \Geckoboom\Scheduler\ScheduleMutexInterface::class,
+        MyScheduleMutexImplementation::class
+    );
+ ```
+3. Provide your `ScheduleRegistrarInterface` dependency.
+```php
+class MyScheduleRegistrar implements \Geckoboom\Scheduler\ScheduleRegistrarInterface
+{
+    public function schedule(\Geckoboom\Scheduler\Schedule $schedule) : void{
     
     }
 }
@@ -78,7 +90,43 @@ class MyScheduleRegistrar implements \Geckoboom\WhirlwindScheduler\ScheduleRegis
 ...
 
 $container->add(
-    \Geckoboom\WhirlwindScheduler\ScheduleRegistrarInterface::class,
+    \Geckoboom\Scheduler\ScheduleRegistrarInterface::class,
     MyScheduleRegistrar::class
 );
+```
+4. Provider `Schedule` singleton dependency
+
+```php
+   $container->addShared(
+        \Geckoboom\Scheduler\Schedule::class,
+        function ($di): \Geckoboom\Scheduler\Schedule {
+            $schedule = new \Geckoboom\Scheduler\Schedule(
+                $di->get(\Geckoboom\Scheduler\EventMutexInterface::class),
+                $di->get(\Geckoboom\Scheduler\ScheduleMutexInterface::class),
+                $di->get(\Geckoboom\Scheduler\CommandBuilder::class),
+                '/path/to/project/root',
+                new DateTimeZone('Europe/London')
+            );
+            
+            $registrar = $di->get(\Geckoboom\Scheduler\ScheduleRegistrarInterface::class);
+            $registrar->schedule($schedule);
+            
+            return $schedule;
+        }
+   );
+```
+
+## Usage
+
+Now you can create executable script or console command based on the appropriate framework syntax.
+```php
+   $service = $container->get(\Geckoboom\Scheduler\ScheduleService::class);
+
+   $service->run(new \DateTimeImmutable());
+```
+The last step is to add a single cron configuration entry to our server that runs your executable command every 
+minute.
+
+```shell
+* * * * * cd /path-to-your-project && php /path-to-executable-script >> /dev/null 2>&1
 ```

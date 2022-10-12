@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler\Test\Unit;
+namespace Geckoboom\Scheduler\Test\Unit;
 
 use DG\BypassFinals;
-use Geckoboom\WhirlwindScheduler\CommandBuilder;
-use Geckoboom\WhirlwindScheduler\Event;
+use Geckoboom\Scheduler\CommandBuilder;
+use Geckoboom\Scheduler\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\PhpExecutableFinder;
 
 class CommandBuilderTest extends TestCase
 {
+    protected string $consoleBinary = 'console';
     protected CommandBuilder $builder;
 
     protected function setUp(): void
@@ -20,7 +21,7 @@ class CommandBuilderTest extends TestCase
         parent::setUp();
         BypassFinals::enable();
 
-        $this->builder = new CommandBuilder();
+        $this->builder = new CommandBuilder($this->consoleBinary);
     }
 
     /**
@@ -32,8 +33,6 @@ class CommandBuilderTest extends TestCase
      */
     public function testBuildCommand(Event $event, string $expected)
     {
-        \defined('CONSOLE_BINARY') or \define('CONSOLE_BINARY', 'console');
-
         if (PHP_OS_FAMILY === 'Windows') {
             self::markTestSkipped('Not available for Windows OS');
         }
@@ -111,4 +110,11 @@ class CommandBuilderTest extends TestCase
 
         return $event;
     }
+
+    public function testGetConsoleBinary()
+    {
+        self::assertEquals($this->consoleBinary, $this->builder->getConsoleBinary());
+    }
+
+
 }

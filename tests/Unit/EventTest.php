@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler\Test\Unit;
+namespace Geckoboom\Scheduler\Test\Unit;
 
 use DG\BypassFinals;
-use Geckoboom\WhirlwindScheduler\CommandBuilder;
-use Geckoboom\WhirlwindScheduler\Event;
-use Geckoboom\WhirlwindScheduler\EventMutexInterface;
-use League\Container\DefinitionContainerInterface;
+use Geckoboom\Scheduler\CommandBuilder;
+use Geckoboom\Scheduler\Event;
+use Geckoboom\Scheduler\EventMutexInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -43,8 +42,8 @@ class EventTest extends TestCase
         $this->event->before(function () {
             self::assertTrue(true);
         });
-        $container = $this->createMock(DefinitionContainerInterface::class);
-        $this->event->callBeforeCallbacks($container);
+        $caller = new DummyCaller();
+        $this->event->callBeforeCallbacks($caller);
     }
 
     public function testIsDue()
@@ -85,8 +84,8 @@ class EventTest extends TestCase
         $this->event->after(function () {
             self::assertTrue(true);
         });
-        $container = $this->createMock(DefinitionContainerInterface::class);
-        $this->event->callAfterCallbacks($container);
+        $caller = new DummyCaller();
+        $this->event->callAfterCallbacks($caller);
     }
 
     public function testEveryTwoMinutes()
@@ -379,7 +378,7 @@ class EventTest extends TestCase
 
     public function testRun()
     {
-        $container = $this->createMock(DefinitionContainerInterface::class);
+        $caller = new DummyCaller();
 
         $this->commandBuilder->expects(self::once())
             ->method('buildCommand')
@@ -387,19 +386,18 @@ class EventTest extends TestCase
             ->willReturn('echo "Test"');
 
         $this->event->setBasePath(__DIR__);
-        $this->event->run($container);
+        $this->event->run($caller);
         self::assertEquals(0, $this->event->getExitCode());
     }
 
     public function testRunCommandInBackground()
     {
-        \define('CONSOLE_BINARY', __DIR__ . '/console_stub');
-        $container = $this->createMock(DefinitionContainerInterface::class);
+        $caller = new DummyCaller();
 
         $finish = \sprintf(
             "'%s' '%s' schedule:finish \"event-* * * * *{$this->command}\"",
             (new PhpExecutableFinder())->find(false),
-            CONSOLE_BINARY
+            __DIR__ . '/console_stub'
         );
         $commandString = '(echo "Test" >> \'/dev/null\' 2>&1 ; ' . $finish . ' "$?") > \'/dev/null\' 2>&1 &';
         $this->commandBuilder->expects(self::once())
@@ -408,13 +406,13 @@ class EventTest extends TestCase
             ->willReturn($commandString);
 
         $this->event->setBasePath(__DIR__);
-        $this->event->run($container);
+        $this->event->run($caller);
         self::assertEquals(0, $this->event->getExitCode());
     }
 
     public function testRunWithoutOverlapping()
     {
-        $container = $this->createMock(DefinitionContainerInterface::class);
+        $caller = new DummyCaller();
 
         $this->event->withoutOverlapping();
 
@@ -423,13 +421,13 @@ class EventTest extends TestCase
             ->with(self::identicalTo($this->event))
             ->willReturn(false);
 
-        $this->event->run($container);
+        $this->event->run($caller);
         self::assertEquals(null, $this->event->getExitCode());
     }
 
     public function testRunWithoutOverlappingForgotMutex()
     {
-        $container = $this->createMock(DefinitionContainerInterface::class);
+        $caller = new DummyCaller();
 
         $this->event->withoutOverlapping();
 
@@ -449,7 +447,7 @@ class EventTest extends TestCase
             ->willReturn('echo "Test"');
 
         $this->event->setBasePath(__DIR__);
-        $this->event->run($container);
+        $this->event->run($caller);
         self::assertEquals(0, $this->event->getExitCode());
     }
 
@@ -725,7 +723,7 @@ class EventTest extends TestCase
      */
     public function testFiltersPass(?\Closure $filter, ?\Closure $reject, bool $expected)
     {
-        $container = $this->createMock(DefinitionContainerInterface::class);
+        $caller = new DummyCaller();
 
         if ($filter) {
             $this->event->when($filter);
@@ -735,7 +733,7 @@ class EventTest extends TestCase
             $this->event->skip($reject);
         }
 
-        self::assertEquals($expected, $this->event->filtersPass($container));
+        self::assertEquals($expected, $this->event->filtersPass($caller));
     }
 
     public function filterPassDataProvider(): array

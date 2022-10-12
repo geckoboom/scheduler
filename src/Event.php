@@ -2,12 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler;
+namespace Geckoboom\Scheduler;
 
 use Cron\CronExpression;
-use League\Container\DefinitionContainerInterface;
-use League\Container\ReflectionContainer;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\Process\Process;
 
 class Event
@@ -628,20 +625,20 @@ class Event
         return $this;
     }
 
-    public function run(DefinitionContainerInterface $container): void
+    public function run(CallerInterface $caller): void
     {
         if (!$this->isOverlapping && !$this->eventMutex->create($this)) {
             return;
         }
 
         $this->isBackgroundRunnable
-            ? $this->runCommandInBackground($container)
-            : $this->runCommandInForeground($container);
+            ? $this->runCommandInBackground($caller)
+            : $this->runCommandInForeground($caller);
     }
 
-    protected function runCommandInBackground(DefinitionContainerInterface $container): void
+    protected function runCommandInBackground(CallerInterface $caller): void
     {
-        $this->callBeforeCallbacks($container);
+        $this->callBeforeCallbacks($caller);
         Process::fromShellCommandline(
             $this->commandBuilder->buildCommand($this),
             $this->basePath,
@@ -652,33 +649,16 @@ class Event
             ->run();
     }
 
-    public function callBeforeCallbacks(DefinitionContainerInterface $container): void
+    public function callBeforeCallbacks(CallerInterface $caller): void
     {
-        $reflectionContainer = new ReflectionContainer();
-        $reflectionContainer->setContainer($container);
-
         foreach ($this->beforeCallbacks as $beforeCallback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $beforeCallback);
-            $reflectionContainer->call($beforeCallback, $args);
+            $caller->call($beforeCallback);
         }
     }
 
-    private function resolveDefaultDependencies(ContainerInterface $container, \Closure $callback): array
+    protected function runCommandInForeground(CallerInterface $caller): void
     {
-        $reflectionMethod = new \ReflectionMethod($callback, '__invoke');
-        $args = [];
-        foreach ($reflectionMethod->getParameters() as $parameter) {
-            if (!$container->has($parameter->getName()) && $parameter->isDefaultValueAvailable()) {
-                $args[$parameter->getName()] = $parameter->getDefaultValue();
-            }
-        }
-
-        return $args;
-    }
-
-    protected function runCommandInForeground(DefinitionContainerInterface $container): void
-    {
-        $this->callBeforeCallbacks($container);
+        $this->callBeforeCallbacks($caller);
         $this->exitCode = Process::fromShellCommandline(
             $this->commandBuilder->buildCommand($this),
             $this->basePath,
@@ -688,17 +668,13 @@ class Event
         )
                 ->run();
 
-        $this->callAfterCallbacks($container);
+        $this->callAfterCallbacks($caller);
     }
 
-    public function callAfterCallbacks(DefinitionContainerInterface $container): void
+    public function callAfterCallbacks(CallerInterface $caller): void
     {
-        $reflectionContainer = new ReflectionContainer();
-        $reflectionContainer->setContainer($container);
-
         foreach ($this->afterCallbacks as $afterCallback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $afterCallback);
-            $reflectionContainer->call($afterCallback, $args);
+            $caller->call($afterCallback);
         }
     }
 
@@ -856,25 +832,19 @@ class Event
     }
 
     /**
-     * Determine if the filters pass for the event.
-     *
-     * @param DefinitionContainerInterface $container
+     * @param CallerInterface $caller
      * @return bool
      */
-    public function filtersPass(DefinitionContainerInterface $container): bool
+    public function filtersPass(CallerInterface $caller): bool
     {
-        $reflectionContainer = new ReflectionContainer();
-        $reflectionContainer->setContainer($container);
         foreach ($this->filters as $callback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $callback);
-            if (!$reflectionContainer->call($callback, $args)) {
+            if (!$caller->call($callback)) {
                 return false;
             }
         }
 
         foreach ($this->rejects as $callback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $callback);
-            if ($reflectionContainer->call($callback, $args)) {
+            if ($caller->call($callback)) {
                 return false;
             }
         }

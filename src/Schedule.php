@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler;
+namespace Geckoboom\Scheduler;
 
-use League\Container\DefinitionContainerInterface;
 use Symfony\Component\Process\PhpExecutableFinder;
 
 class Schedule
@@ -12,7 +11,6 @@ class Schedule
     protected array $events = [];
     protected EventMutexInterface $eventMutex;
     protected ScheduleMutexInterface $scheduleMutex;
-    protected DefinitionContainerInterface $container;
     protected CommandBuilder $commandBuilder;
     protected string $basePath;
     protected \DateTimeZone $timezone;
@@ -20,7 +18,6 @@ class Schedule
     /**
      * @param EventMutexInterface $eventMutex
      * @param ScheduleMutexInterface $scheduleMutex
-     * @param DefinitionContainerInterface $container
      * @param CommandBuilder $commandBuilder
      * @param string $basePath
      * @param \DateTimeZone|null $timezone
@@ -28,14 +25,12 @@ class Schedule
     public function __construct(
         EventMutexInterface $eventMutex,
         ScheduleMutexInterface $scheduleMutex,
-        DefinitionContainerInterface $container,
         CommandBuilder $commandBuilder,
         string $basePath,
         ?\DateTimeZone $timezone = null
     ) {
         $this->eventMutex = $eventMutex;
         $this->scheduleMutex = $scheduleMutex;
-        $this->container = $container;
         $this->commandBuilder = $commandBuilder;
         $this->basePath = $basePath;
         $this->timezone = $timezone ?? new \DateTimeZone('UTC');
@@ -51,9 +46,7 @@ class Schedule
         return \sprintf(
             '%s %s %s',
             ProcessUtils::escapeArgument((new PhpExecutableFinder())->find(false)),
-            \defined('CONSOLE_BINARY')
-                ? CONSOLE_BINARY
-                : \rtrim($this->basePath, '/') . '/src/App/Console/console.php',
+            ProcessUtils::escapeArgument($this->commandBuilder->getConsoleBinary()),
             $command
         );
     }
@@ -116,7 +109,7 @@ class Schedule
      * @param \DateTimeInterface $time
      * @return bool
      */
-    public function serverShouldRun(Event $event, \DateTimeInterface $time)
+    public function serverShouldRun(Event $event, \DateTimeInterface $time): bool
     {
         return $this->scheduleMutex->create($event, $time);
     }

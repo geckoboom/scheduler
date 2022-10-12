@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler\EventBus;
+namespace Geckoboom\Scheduler\EventBus;
 
-use Geckoboom\WhirlwindScheduler\Event;
-use Whirlwind\Domain\Event\EventInterface;
+use Geckoboom\Scheduler\Event;
 
 class ScheduleTaskStarting implements EventInterface
 {

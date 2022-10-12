@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler\ScheduleMutex;
+namespace Geckoboom\Scheduler\ScheduleMutex;
 
 use DateTimeInterface;
-use Geckoboom\WhirlwindScheduler\Event;
-use Geckoboom\WhirlwindScheduler\ScheduleMutexInterface;
+use Geckoboom\Scheduler\Event;
+use Geckoboom\Scheduler\ScheduleMutexInterface;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 

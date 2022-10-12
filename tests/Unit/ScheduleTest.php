@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler\Test\Unit;
+namespace Geckoboom\Scheduler\Test\Unit;
 
 use DG\BypassFinals;
-use Geckoboom\WhirlwindScheduler\CommandBuilder;
-use Geckoboom\WhirlwindScheduler\Event;
-use Geckoboom\WhirlwindScheduler\EventMutexInterface;
-use Geckoboom\WhirlwindScheduler\Schedule;
-use Geckoboom\WhirlwindScheduler\ScheduleMutexInterface;
-use League\Container\DefinitionContainerInterface;
+use Geckoboom\Scheduler\CommandBuilder;
+use Geckoboom\Scheduler\Event;
+use Geckoboom\Scheduler\EventMutexInterface;
+use Geckoboom\Scheduler\Schedule;
+use Geckoboom\Scheduler\ScheduleMutexInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -19,7 +18,6 @@ class ScheduleTest extends TestCase
 {
     private MockObject $eventMutex;
     private MockObject $scheduleMutex;
-    private MockObject $container;
     private MockObject $commandBuilder;
     private string $basePath = '/';
     private \DateTimeZone $timezone;
@@ -32,14 +30,12 @@ class ScheduleTest extends TestCase
 
         $this->eventMutex = $this->createMock(EventMutexInterface::class);
         $this->scheduleMutex = $this->createMock(ScheduleMutexInterface::class);
-        $this->container = $this->createMock(DefinitionContainerInterface::class);
         $this->commandBuilder = $this->createMock(CommandBuilder::class);
         $this->timezone = new \DateTimeZone('Europe/London');
 
         $this->schedule = new Schedule(
             $this->eventMutex,
             $this->scheduleMutex,
-            $this->container,
             $this->commandBuilder,
             $this->basePath,
             $this->timezone
@@ -94,10 +90,16 @@ class ScheduleTest extends TestCase
 
     public function testCommand()
     {
+        $consoleBinary = 'console';
+
+        $this->commandBuilder->expects(self::once())
+            ->method('getConsoleBinary')
+            ->willReturn($consoleBinary);
+
         $expected = \sprintf(
-            "'%s' %s %s",
+            "'%s' '%s' %s",
             (new PhpExecutableFinder())->find(false),
-            \defined('CONSOLE_BINARY') ? '\'' . CONSOLE_BINARY . '\'' : $this->basePath . 'src/App/Console/console.php',
+            $consoleBinary,
             'test:command --test=\'value\' \'arg\''
         );
         $actual = $this->schedule->command('test:command', ['--test' => 'value', 'arg']);

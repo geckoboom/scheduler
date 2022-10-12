@@ -2,12 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Geckoboom\WhirlwindScheduler;
+namespace Geckoboom\Scheduler;
 
 use Symfony\Component\Process\PhpExecutableFinder;
 
 class CommandBuilder
 {
+    protected string $consoleBinary;
+
+    /**
+     * @param string $consoleBinary
+     */
+    public function __construct(string $consoleBinary)
+    {
+        $this->consoleBinary = $consoleBinary;
+    }
+
     public function buildCommand(Event $event): string
     {
         if ($event->isBackgroundRunnable()) {
@@ -45,9 +55,7 @@ class CommandBuilder
         return \sprintf(
             '%s %s %s',
             ProcessUtils::escapeArgument((new PhpExecutableFinder())->find(false)),
-            \defined('CONSOLE_BINARY')
-                ? ProcessUtils::escapeArgument(CONSOLE_BINARY)
-                : 'src/App/Console/console.php',
+            ProcessUtils::escapeArgument($this->consoleBinary),
             $string
         );
     }
@@ -67,5 +75,13 @@ class CommandBuilder
             $event,
             $event->getCommand() . ' >> ' . $output . ' 2>&1'
         );
+    }
+
+    /**
+     * @return string
+     */
+    public function getConsoleBinary(): string
+    {
+        return $this->consoleBinary;
     }
 }
