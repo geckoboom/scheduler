@@ -97,7 +97,7 @@ class Event
      *
      * @var int
      */
-    protected int $exitCode = 0;
+    protected int $exitCode;
     /**
      * The array of filter callbacks.
      *
@@ -115,7 +115,7 @@ class Event
      *
      * @var \Closure[]
      */
-    protected array $beforeCallbacks = [];
+    public array $beforeCallbacks = [];
     /**
      * The array of callbacks to be run after the event is finished.
      *
@@ -225,8 +225,10 @@ class Event
     }
 
     /**
-     * @param string $startTime
-     * @param string $endTime
+     * Schedule the event to not run between start and end time.
+     *
+     * @param string $startTime "HH:MM" (ie "09:00")
+     * @param string $endTime   "HH:MM" (ie "14:30")
      * @param bool $inclusive
      * @return $this
      */
@@ -663,7 +665,7 @@ class Event
 
     private function resolveDefaultDependencies(ContainerInterface $container, \Closure $callback): array
     {
-        $reflectionMethod = new \ReflectionMethod($callback);
+        $reflectionMethod = new \ReflectionMethod($callback, '__invoke');
         $args = [];
         foreach ($reflectionMethod->getParameters() as $parameter) {
             if (!$container->has($parameter->getName()) && $parameter->isDefaultValueAvailable()) {
@@ -813,11 +815,11 @@ class Event
     }
 
     /**
-     * @return int
+     * @return int|null
      */
-    public function getExitCode(): int
+    public function getExitCode(): ?int
     {
-        return $this->exitCode;
+        return $this->exitCode ?? null;
     }
 
     /**
@@ -864,14 +866,14 @@ class Event
         $reflectionContainer = new ReflectionContainer();
         $reflectionContainer->setContainer($container);
         foreach ($this->filters as $callback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $beforeCallback);
+            $args = $this->resolveDefaultDependencies($reflectionContainer, $callback);
             if (!$reflectionContainer->call($callback, $args)) {
                 return false;
             }
         }
 
         foreach ($this->rejects as $callback) {
-            $args = $this->resolveDefaultDependencies($reflectionContainer, $beforeCallback);
+            $args = $this->resolveDefaultDependencies($reflectionContainer, $callback);
             if ($reflectionContainer->call($callback, $args)) {
                 return false;
             }
