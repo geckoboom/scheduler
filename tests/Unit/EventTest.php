@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Geckoboom\WhirlwindScheduler\Test\Unit;
@@ -63,7 +64,8 @@ class EventTest extends TestCase
 
     public function testBefore()
     {
-        $expected = function () {};
+        $expected = function () {
+        };
         $this->event->before($expected);
 
         [$actual] = $callbacks = $this->call($this->event, function () {
@@ -231,7 +233,8 @@ class EventTest extends TestCase
 
     public function testSkip()
     {
-        $expected = function () {};
+        $expected = function () {
+        };
         $this->event->skip($expected);
         [$actual] = $rejects = $this->call($this->event, function () {
             return $this->rejects;
@@ -468,7 +471,8 @@ class EventTest extends TestCase
 
     public function testAfter()
     {
-        $expected = function () {};
+        $expected = function () {
+        };
         $this->event->after($expected);
         [$actual] = $afterCallbacks = $this->call($this->event, function () {
             return $this->afterCallbacks;
@@ -574,7 +578,7 @@ class EventTest extends TestCase
         self::assertEquals($expected, $actual);
 
         $expected = '21 13 28 * *';
-        $actual = $this->call($this->event->monthlyOn(28,'13:21'), function () {
+        $actual = $this->call($this->event->monthlyOn(28, '13:21'), function () {
             return $this->expression;
         });
         self::assertEquals($expected, $actual);
@@ -622,7 +626,8 @@ class EventTest extends TestCase
 
     public function testWhen()
     {
-        $expected = function () {};
+        $expected = function () {
+        };
         $this->event->when($expected);
 
         [$actual] = $filters = $this->call($this->event, function () {
@@ -742,33 +747,49 @@ class EventTest extends TestCase
                 'expected' => true,
             ],
             [
-                'filter' => function () { return true; },
+                'filter' => function () {
+                    return true;
+                },
                 'reject' => null,
                 'expected' => true,
             ],
             [
-                'filter' => function () { return false; },
+                'filter' => function () {
+                    return false;
+                },
                 'reject' => null,
                 'expected' => false,
             ],
             [
                 'filter' => null,
-                'reject' => function () { return true; },
+                'reject' => function () {
+                    return true;
+                },
                 'expected' => false,
             ],
             [
                 'filter' => null,
-                'reject' => function () { return false; },
+                'reject' => function () {
+                    return false;
+                },
                 'expected' => true,
             ],
             [
-                'filter' => function () { return true; },
-                'reject' => function () { return true; },
+                'filter' => function () {
+                    return true;
+                },
+                'reject' => function () {
+                    return true;
+                },
                 'expected' => false,
             ],
             [
-                'filter' => function () { return true; },
-                'reject' => function () { return false; },
+                'filter' => function () {
+                    return true;
+                },
+                'reject' => function () {
+                    return false;
+                },
                 'expected' => true,
             ],
         ];
