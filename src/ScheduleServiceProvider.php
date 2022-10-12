@@ -32,7 +32,7 @@ class ScheduleServiceProvider extends AbstractServiceProvider implements Bootabl
         $this->getContainer()->addShared(
             Schedule::class,
             function (): Schedule {
-                return new Schedule(
+                $schedule =  new Schedule(
                     $this->getContainer()->get(EventMutexInterface::class),
                     $this->getContainer()->get(ScheduleMutexInterface::class),
                     $this->getContainer(),
@@ -40,6 +40,12 @@ class ScheduleServiceProvider extends AbstractServiceProvider implements Bootabl
                     $this->getContainer()->get(CommandBuilder::class),
                     new \DateTimeZone(env('APP_TIMEZONE') ?? 'UTC')
                 );
+
+                /** @var ScheduleRegistrarInterface $registrar */
+                $registrar = $this->getContainer()->get(ScheduleRegistrarInterface::class);
+                $registrar->schedule($schedule);
+
+                return $schedule;
             }
         );
 
