@@ -1,6 +1,10 @@
 {
     "name": "geckoboom/whirlwind-scheduler",
     "description": "Cron scheduler for console commands",
+    "keywords": [
+        "whirlwind",
+        "scheduler"
+    ],
     "type": "library",
     "license": "BSD-3-Clause",
     "autoload": {
