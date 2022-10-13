@@ -39,3 +39,28 @@ $schedule->command('my:command')
     ->runInBackground();
 ```
 
+If needed, you may listen to events dispatched by the scheduler. Just create your event subscriber and provide it to 
+EventDispatcher dependency
+
+```php
+class ScheduleTaskFinishedSubscriber implements \Geckoboom\Scheduler\EventBus\EventSubscriberInterface
+{
+    public function isSubscribedTo(\Geckoboom\Scheduler\EventBus\EventInterface $event) : bool{
+        return $event instanceof \Geckoboom\Scheduler\EventBus\ScheduleTaskFinished;
+    }
+    
+    public function handle(\Geckoboom\Scheduler\EventBus\EventInterface $event) : void{
+        // Do things after task finished
+    }
+}
+```
+```php
+$container->add(
+    \Geckoboom\Scheduler\EventBus\EventDispatcher::class,
+    static function ($di) {
+        return new \Geckoboom\Scheduler\EventBus\EventDispatcher([
+            $di->get(ScheduleTaskFinishedSubscriber::class)
+        ])
+    }
+);
+```
