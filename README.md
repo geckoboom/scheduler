@@ -83,7 +83,14 @@ or create your own realizations
 class MyScheduleRegistrar implements \Geckoboom\Scheduler\ScheduleRegistrarInterface
 {
     public function schedule(\Geckoboom\Scheduler\Schedule $schedule) : void {
-    
+        $schedule->command('send:emails', ['--option1' => 'value', 'argument1'])
+            ->daily()
+            ->withoutOverlapping();
+        
+        $schedule->command('orders:distribute')
+            ->mondays()
+            ->at('14:00')
+            ->runInBackground();
     }
 }
 
