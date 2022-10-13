@@ -14,13 +14,13 @@
 ## Introduction
 
 Command scheduler is a great approach to managing scheduled console commands on the server.
-The package allows you to control your task scheduling withing console application. When using a
+The package allows you to control your task scheduling within the console application. When using a
 scheduler, only a single cron entry is required on your server.
 
 ## Installation
 
 This is installable via Composer as This is installable via [Composer](https://getcomposer.org/) as
-[nelmio/alice](https://packagist.org/packages/geckoboom/scheduler):
+[geckoboom/scheduler](https://packagist.org/packages/geckoboom/scheduler):
 
     composer require geckoboom/scheduler
 
@@ -82,7 +82,7 @@ or create your own realizations
 ```php
 class MyScheduleRegistrar implements \Geckoboom\Scheduler\ScheduleRegistrarInterface
 {
-    public function schedule(\Geckoboom\Scheduler\Schedule $schedule) : void{
+    public function schedule(\Geckoboom\Scheduler\Schedule $schedule) : void {
     
     }
 }
