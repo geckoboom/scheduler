@@ -56,7 +56,7 @@ class Schedule
      * @param array $parameters
      * @return Event
      */
-    protected function exec(string $command, array $parameters = []): Event
+    public function exec(string $command, array $parameters = []): Event
     {
         if (\count($parameters)) {
             $command .= ' ' . $this->compileParameters($parameters);
