@@ -17,6 +17,18 @@ class ScheduleService
     protected EventDispatcher $dispatcher;
 
     /**
+     * @param Schedule $schedule
+     * @param CallerInterface $caller
+     * @param EventDispatcher $dispatcher
+     */
+    public function __construct(Schedule $schedule, CallerInterface $caller, EventDispatcher $dispatcher)
+    {
+        $this->schedule = $schedule;
+        $this->caller = $caller;
+        $this->dispatcher = $dispatcher;
+    }
+
+    /**
      * @param \DateTimeImmutable $startedAt
      * @return void
      * @throws SkipEventException
